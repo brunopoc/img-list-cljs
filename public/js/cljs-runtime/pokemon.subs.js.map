@@ -1,0 +1,1 @@
+{"version":3,"sources":["pokemon/subs.cljs"],"mappings":";;;AAIA,AAAAA,AAAA;AAAAC,AACE;AAAKE;AAAL,AACE,AAAA,AAAWA;;;AAFf,AAAA,AAAAH,AAAAC,AAAAD,AAAAC,AAACC,AAAAA,AAAAA","names":["G__27464","G__27465","re-frame.core/reg-sub","db"],"sourcesContent":["(ns pokemon.subs\n  (:require\n    [re-frame.core :as rf]))\n\n(rf/reg-sub :app-name\n  (fn [db]\n    (:app-name db)))\n"]}
