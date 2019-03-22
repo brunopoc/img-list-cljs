@@ -1,0 +1,7 @@
+@font-face {
+    font-family: "Pokemon";
+    src: url("../fonts/pokemon/PokemonSolid.ttf") format("truetype");
+}
+html, body, div#root {
+    font-family: "Pokemon" !important;    
+}

@@ -3,97 +3,95 @@
    [re-frame.core :as rf]
    [reagent.core :as r]
    [clojure.walk :as walk]
+   [pokemon.queries :as q]
    ))
 
-;none;to-do list
+(def pokemon-count (r/atom 0))
+(def result (r/atom {}))
 
-(def list-todo (r/atom []))
+(defn handle-response [response]
+  (.json response))
 
+;;Request com JS/Fetch
+(defn pokemon-fetch [variable query]
+  (-> (js/fetch "https://graphql-pokemon.now.sh/"
+                (clj->js {:method  "POST"
+                          :headers {"Content-Type" "application/json"}
+                          :body    (-> {:query query
+                                        :variables variable}
+                                       clj->js
+                                       js/JSON.stringify)}))
+      (.then handle-response)
+      (.then (fn [response]
+               (reset! result (:data (-> (js->clj response)
+                                                       walk/keywordize-keys)))))))
 
+(defn load-pkm-list []
+  (swap! pokemon-count #(+ % 5))
+  (-> (pokemon-fetch {:first @pokemon-count} q/pokemons)
+      (.then (fn [value] (rf/dispatch [:save-pkm-list (:pokemons value)])))))
 
-(defn add-item-list [item]
-  (println @(rf/subscribe [:get-list-todo]))
-  (swap! list-todo conj item)
-  (rf/dispatch [:add-todo item]))
+(defn load-pkm [name]
+  (-> (pokemon-fetch {:name name} q/pokemon)
+      (.then (fn [value] (rf/dispatch [:save-pkm (:pokemon value)])))))
 
-(defn handle-on-key-press [event]
-  (when (= "Enter" (-> event .-key)) 
-    (add-item-list {:id (js/Date) :value (-> event .-target .-value) :input false :done false})))
+(load-pkm-list)
+(load-pkm "Bulbasaur")
 
-(defn remove-item-list [item]
-  (swap! list-todo (fn [old-list] (remove #(= item %) old-list)))
-  (rf/dispatch [:remove-todo item]))
+(defn pokemon-info [mypokemon]
+  [:div [:div.name {:style {:color "#F4F4F4"
+                            :font-size "20px"
+                            :margin-bottom "20px"}}
+         (:name mypokemon)
+         " #" (:number mypokemon)]
+   [:img.br3 {:style {:height "200px"
+                      :width "200px"
+                      :background-color "#fff"
+                      :margin-bottom "20px"}
+              :src (:image mypokemon)}]
+   [:div.pkmtype {:style {:color "#F4F4F4"
+                          :font-size "20px"
+                          :margin-bottom "20px"
+                          :text-align "center"}}
+    (for [types (:types mypokemon)]
+      (str types " "))]])
 
-(defn show-input-item-list [item]
-  (rf/dispatch [:show-input-todo-list item]))
+(defn pokemon-list-render []
+  [:div.flex.flex-column.items-center [:p {:style {:font-size "24px" :margin "10px 0px"}} "Lista de Pokemons"]
+   [:button.pointer {:style {:padding "10px"
+                             :background-color "#800000"
+                             :border "1px solid #6A0000"
+                             :color "#FFF"
+                             :border-radius "10px"}
+                     :on-click load-pkm-list} "Load more ..."]
+   [:ul {:style {:color "#F4F4F4"}}
+    (for [pokemon @(rf/subscribe [:get-pkm-list])]
+      [:li.pointer {:key (:id pokemon) :style {:margin "5px"} :on-click #(load-pkm (:name pokemon))} (str "#" (:number pokemon)) (str " " (:name pokemon))])]])
 
-(defn edit-item-list [e item]
-  (when (= "Enter" (-> e .-key)) (rf/dispatch [:edit-item-list item (-> e .-target .-value)])))
-
-(defn todo-done [e item]
-  (rf/dispatch [:todo-done item]))
-
-(defn list-items [item-map]
-  [:li {:style {:padding " 10px 5px"
-                :display "flex"
-                :justify-content "space-between"} :key (:id item-map)}
-   [:div (if (false? (:input item-map))
-           (if (false? (:done item-map)) 
-                       (:value item-map)
-                       [:span {:style {:text-decoration "line-through"}} (:value item-map)])
-           [:input {:default-value (:value item-map)
-                    :on-key-press #(edit-item-list % item-map)}])]
-   [:div
-    "Feito" [:input {:style {:margin-right "10px"
-                             :height "20px"
-                             :width "20px"}
-                     :on-change #(todo-done % item-map)
-                     :type "checkbox"}]
-    (if (false? (:done item-map))
-      [:button {:style {:padding "10px"
-                        :background-color "#033EA4"
-                        :border-radius "2px"
-                        :color "white"
-                        :font-weight "600"
-                        :font-size "16px"
-                        :border "unset"}
-                :on-click #(show-input-item-list item-map)} "Editar"]
-      [:button {:style {:padding "10px"
-                        :background-color "#90A1BE"
-                        :border-radius "2px"
-                        :color "white"
-                        :font-weight "600"
-                        :font-size "16px"
-                        :border "unset"}} "Editar"])
-    [:button {:on-click #(remove-item-list item-map)
-              :style {:padding "10px"
-                      :background-color "#B00000"
-                      :margin-left "10px"
-                      :border-radius "2px"
-                      :color "white"
-                      :font-weight "600"
-                      :font-size "16px"
-                      :border "unset"}} "Delete"]]])
+(defn pkm-search [e]
+  (when (= (-> e .-key) "Enter")
+    (-> (pokemon-fetch {:name (-> e .-target .-value)} q/pokemon)
+        (.then (fn [value] (rf/dispatch [:save-pkm (:pokemon value)]))))))
 
 ;Render Principal
 (defn show []
-  [:div.main
-   {:style {:display "flex"
-            :padding-top "50px"
-            :flex-direction "column"
-            :align-items "center"
-            :font-size "20px"}}
-   [:p "Lista de Tarefas"]
-   [:input {:placeholder "Digite sua tarefa e aperte enter!"
-            :style {:width "300px"
-                    :padding "20px"
-                    :border-radius "5px"
-                    :outline "none"
-                    :box-shadow "unset"}
-            :on-key-press handle-on-key-press}]
-   [:ul {:style {:list-style "none"
-                 :width "80%"
-                 :background-color "#F3F3F3"
-                 :padding "20px 20px"}}
-    (map list-items @(rf/subscribe [:get-list-todo]))
+  [:div.main.flex.justify-center
+   {:style {:margin "10% 0px"
+            :width "70%"
+            :border-radius "10px"
+            :border "1px solid #910000"
+            :padding "10px 10px 20px 10px"
+            :background-color "#C60000"}}
+   [:div.flex.flex-column.items-center
+    [:p {:style {:font-size "34px"}} "Pokemon"]
+    [:input.br3 {:type "text" 
+                 :style {:margin-bottom "20px"
+                         :width "250px"
+                         :padding "10px" 
+                         :font-size "14px"
+                         :border "unset"}
+                 :on-key-press pkm-search
+                 :placeholder "Pesquisar o nome do Pokemon ..."}]
+    [pokemon-info @(rf/subscribe [:get-pkm])]
+    [pokemon-list-render]
     ]])
