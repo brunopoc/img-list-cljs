@@ -12,8 +12,8 @@ pokemon.core.render = (function pokemon$core$render(){
 return reagent.core.render.cljs$core$IFn$_invoke$arity$2(new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [pokemon.view.show], null),document.getElementById("root"));
 });
 pokemon.core.init = (function pokemon$core$init(){
-var G__32443_32444 = new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [new cljs.core.Keyword(null,"initialize","initialize",609952913)], null);
-(re_frame.core.dispatch_sync.cljs$core$IFn$_invoke$arity$1 ? re_frame.core.dispatch_sync.cljs$core$IFn$_invoke$arity$1(G__32443_32444) : re_frame.core.dispatch_sync.call(null,G__32443_32444));
+var G__36518_36519 = new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [new cljs.core.Keyword(null,"initialize","initialize",609952913)], null);
+(re_frame.core.dispatch_sync.cljs$core$IFn$_invoke$arity$1 ? re_frame.core.dispatch_sync.cljs$core$IFn$_invoke$arity$1(G__36518_36519) : re_frame.core.dispatch_sync.call(null,G__36518_36519));
 
 return pokemon.core.render();
 });
